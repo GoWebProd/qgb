@@ -8,6 +8,7 @@ import (
 	"github.com/GoWebProd/gip/safe"
 	"github.com/GoWebProd/gip/types/iface"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type Query[T any] struct {
@@ -61,7 +62,7 @@ func (q Query[T]) PrepareArgs(args pgx.NamedArgs) (string, pgx.NamedArgs) {
 	return q.query, args
 }
 
-func (q Query[T]) Exec(ctx context.Context, tx pgx.Tx, t *T) (int64, error) {
+func (q Query[T]) Exec(ctx context.Context, tx Querier, t *T) (int64, error) {
 	query, args := q.Prepare(t)
 
 	tag, err := tx.Exec(ctx, query, args)
@@ -72,7 +73,7 @@ func (q Query[T]) Exec(ctx context.Context, tx pgx.Tx, t *T) (int64, error) {
 	return tag.RowsAffected(), nil
 }
 
-func (q Query[T]) ExecArgs(ctx context.Context, tx pgx.Tx, args pgx.NamedArgs) (int64, error) {
+func (q Query[T]) ExecArgs(ctx context.Context, tx Querier, args pgx.NamedArgs) (int64, error) {
 	query, args := q.PrepareArgs(args)
 
 	tag, err := tx.Exec(ctx, query, args)
@@ -83,7 +84,7 @@ func (q Query[T]) ExecArgs(ctx context.Context, tx pgx.Tx, args pgx.NamedArgs) (
 	return tag.RowsAffected(), nil
 }
 
-func (q Query[T]) Query(ctx context.Context, tx pgx.Tx, t *T) (pgx.Rows, error) {
+func (q Query[T]) Query(ctx context.Context, tx Querier, t *T) (pgx.Rows, error) {
 	query, args := q.Prepare(t)
 
 	rows, err := tx.Query(ctx, query, args)
@@ -94,7 +95,7 @@ func (q Query[T]) Query(ctx context.Context, tx pgx.Tx, t *T) (pgx.Rows, error) 
 	return rows, nil
 }
 
-func (q Query[T]) QueryStructs(ctx context.Context, tx pgx.Tx, t *T) ([]*T, error) {
+func (q Query[T]) QueryStructs(ctx context.Context, tx Querier, t *T) ([]*T, error) {
 	query, args := q.Prepare(t)
 
 	rows, err := tx.Query(ctx, query, args)
@@ -105,7 +106,7 @@ func (q Query[T]) QueryStructs(ctx context.Context, tx pgx.Tx, t *T) ([]*T, erro
 	return collect[T](q.table, rows)
 }
 
-func (q Query[T]) QueryArgs(ctx context.Context, tx pgx.Tx, args pgx.NamedArgs) (pgx.Rows, error) {
+func (q Query[T]) QueryArgs(ctx context.Context, tx Querier, args pgx.NamedArgs) (pgx.Rows, error) {
 	query, args := q.PrepareArgs(args)
 
 	rows, err := tx.Query(ctx, query, args)
@@ -116,7 +117,7 @@ func (q Query[T]) QueryArgs(ctx context.Context, tx pgx.Tx, args pgx.NamedArgs) 
 	return rows, nil
 }
 
-func (q Query[T]) QueryStructsArgs(ctx context.Context, tx pgx.Tx, args pgx.NamedArgs) ([]*T, error) {
+func (q Query[T]) QueryStructsArgs(ctx context.Context, tx Querier, args pgx.NamedArgs) ([]*T, error) {
 	query, args := q.PrepareArgs(args)
 
 	rows, err := tx.Query(ctx, query, args)
@@ -127,13 +128,13 @@ func (q Query[T]) QueryStructsArgs(ctx context.Context, tx pgx.Tx, args pgx.Name
 	return collect[T](q.table, rows)
 }
 
-func (q Query[T]) QueryRow(ctx context.Context, tx pgx.Tx, t *T) pgx.Row {
+func (q Query[T]) QueryRow(ctx context.Context, tx Querier, t *T) pgx.Row {
 	query, args := q.Prepare(t)
 
 	return tx.QueryRow(ctx, query, args)
 }
 
-func (q Query[T]) QueryStruct(ctx context.Context, tx pgx.Tx, t *T) (*T, error) {
+func (q Query[T]) QueryStruct(ctx context.Context, tx Querier, t *T) (*T, error) {
 	query, args := q.Prepare(t)
 
 	t, _, err := get[T](q.table, nil, tx.QueryRow(ctx, query, args))
@@ -144,13 +145,13 @@ func (q Query[T]) QueryStruct(ctx context.Context, tx pgx.Tx, t *T) (*T, error) 
 	return t, nil
 }
 
-func (q Query[T]) QueryRowArgs(ctx context.Context, tx pgx.Tx, args pgx.NamedArgs) pgx.Row {
+func (q Query[T]) QueryRowArgs(ctx context.Context, tx Querier, args pgx.NamedArgs) pgx.Row {
 	query, args := q.PrepareArgs(args)
 
 	return tx.QueryRow(ctx, query, args)
 }
 
-func (q Query[T]) QueryStructArgs(ctx context.Context, tx pgx.Tx, args pgx.NamedArgs) (*T, error) {
+func (q Query[T]) QueryStructArgs(ctx context.Context, tx Querier, args pgx.NamedArgs) (*T, error) {
 	query, args := q.PrepareArgs(args)
 
 	t, _, err := get[T](q.table, nil, tx.QueryRow(ctx, query, args))
@@ -159,4 +160,10 @@ func (q Query[T]) QueryStructArgs(ctx context.Context, tx pgx.Tx, args pgx.Named
 	}
 
 	return t, nil
+}
+
+type Querier interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (commandTag pgconn.CommandTag, err error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
