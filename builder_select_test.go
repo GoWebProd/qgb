@@ -162,7 +162,7 @@ func TestSelectWithTwiceParameter(t *testing.T) {
 	assert.Equal(t, params["id2"], args["id2"])
 }
 
-func TestSelectFieldsWithLimitAndOrderBy(t *testing.T) {
+func TestSelectFieldsWithLimitAndOneOrderBy(t *testing.T) {
 	t.Parallel()
 
 	type testStruct struct {
@@ -195,6 +195,85 @@ func TestSelectFieldsWithLimitAndOrderBy(t *testing.T) {
 	assert.Equal(
 		t,
 		`SELECT key FROM "testTable" ORDER BY id DESC LIMIT 10`,
+		query,
+	)
+	assert.Equal(t, 0, len(args))
+}
+
+func TestSelectFieldsWithLimitAndTwoOrderBy(t *testing.T) {
+	t.Parallel()
+
+	type testStruct struct {
+		ID        uint64    `db:"id,primaryKey"`
+		Key       string    `db:"key"`
+		Scopes    string    `db:"scopes"`
+		CreatedAt time.Time `db:"created_at"`
+		UpdatedAt time.Time `db:"updated_at"`
+	}
+
+	o, err := New[testStruct]("testTable")
+
+	assert.NoError(t, err)
+
+	ts := testStruct{
+		ID: 1234,
+	}
+
+	qb, err := o.
+		Select().
+		Fields("key").
+		OrderBy("id", Desc).
+		OrderBy("key", Asc).
+		Limit(10).
+		Build()
+
+	assert.NoError(t, err)
+
+	query, args := qb.Prepare(&ts)
+
+	assert.Equal(
+		t,
+		`SELECT key FROM "testTable" ORDER BY id DESC, key ASC LIMIT 10`,
+		query,
+	)
+	assert.Equal(t, 0, len(args))
+}
+
+func TestSelectFieldsWithLimitAndSeveralOrderBy(t *testing.T) {
+	t.Parallel()
+
+	type testStruct struct {
+		ID        uint64    `db:"id,primaryKey"`
+		Key       string    `db:"key"`
+		Scopes    string    `db:"scopes"`
+		CreatedAt time.Time `db:"created_at"`
+		UpdatedAt time.Time `db:"updated_at"`
+	}
+
+	o, err := New[testStruct]("testTable")
+
+	assert.NoError(t, err)
+
+	ts := testStruct{
+		ID: 1234,
+	}
+
+	qb, err := o.
+		Select().
+		Fields("key").
+		OrderBy("id", Desc).
+		OrderBy("key", Asc).
+		OrderBy("created_at", Desc).
+		Limit(10).
+		Build()
+
+	assert.NoError(t, err)
+
+	query, args := qb.Prepare(&ts)
+
+	assert.Equal(
+		t,
+		`SELECT key FROM "testTable" ORDER BY id DESC, key ASC, created_at DESC LIMIT 10`,
 		query,
 	)
 	assert.Equal(t, 0, len(args))
