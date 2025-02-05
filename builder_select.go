@@ -12,9 +12,10 @@ type SelectBuilder[T any] struct {
 	fields       []string
 	fieldsCustom bool
 
-	where  *clause
-	limit  *int
-	offset *int
+	where   *clause
+	orderBy []orderBy
+	limit   *int
+	offset  *int
 }
 
 func (b *SelectBuilder[T]) Fields(fields ...string) *SelectBuilder[T] {
@@ -41,6 +42,15 @@ func (b *SelectBuilder[T]) Limit(limit int) *SelectBuilder[T] {
 
 func (b *SelectBuilder[T]) Offset(offset int) *SelectBuilder[T] {
 	b.offset = &offset
+
+	return b
+}
+
+func (b *SelectBuilder[T]) OrderBy(field string, sort sort) *SelectBuilder[T] {
+	b.orderBy = append(b.orderBy, orderBy{
+		field: field,
+		sort:  sort,
+	})
 
 	return b
 }
@@ -73,6 +83,20 @@ func (b *SelectBuilder[T]) Build() (Query[T], error) {
 
 		buf.WriteString(" WHERE ")
 		buf.WriteString(sql)
+	}
+
+	if len(b.orderBy) > 0 {
+		buf.WriteString(" ORDER BY ")
+		buf.WriteString(b.orderBy[0].field)
+		buf.WriteString(" ")
+		buf.WriteString(string(b.orderBy[0].sort))
+
+		for i := 1; i < len(b.orderBy); i++ {
+			buf.WriteString(", ")
+			buf.WriteString(b.orderBy[i].field)
+			buf.WriteString(" ")
+			buf.WriteString(string(b.orderBy[i].sort))
+		}
 	}
 
 	if b.limit != nil {
