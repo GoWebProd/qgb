@@ -147,6 +147,59 @@ func TestClauseIN(t *testing.T) {
 	assert.Equal(t, []placeholderValue{{"id1", inV}}, args)
 }
 
+func TestClauseANY(t *testing.T) {
+	t.Parallel()
+
+	tt := []struct {
+		name   string
+		field  string
+		value  any
+		assert func(t *testing.T, sql string, args []placeholderValue, err error)
+	}{
+		{
+			name:  "ok 1 int",
+			field: "id",
+			value: 1,
+			assert: func(t *testing.T, sql string, args []placeholderValue, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, "id = ANY(@id1)", sql)
+				assert.Equal(t, []placeholderValue{
+					{
+						field: "id1",
+						value: 1,
+					},
+				}, args)
+			},
+		},
+		{
+			name:  "ok 2 strings",
+			field: "id",
+			value: []string{"1", "2"},
+			assert: func(t *testing.T, sql string, args []placeholderValue, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, "id = ANY(@id1)", sql)
+				assert.Equal(t, []placeholderValue{
+					{
+						field: "id1",
+						value: []string{"1", "2"},
+					},
+				}, args)
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			clause := ANY(tc.field, tc.value)
+
+			sql, args, err := clause.toSQL(&counter{})
+			tc.assert(t, sql, args, err)
+		})
+	}
+}
+
 func TestClauseISNULL(t *testing.T) {
 	clause := ISNULL("id")
 

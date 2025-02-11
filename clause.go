@@ -42,6 +42,8 @@ func (c *clause) toSQL(counter *counter) (string, []placeholderValue, error) {
 		return c.field + " <= " + c.getPlaceholder(counter), c.valueMap(), nil
 	case "in":
 		return c.field + " IN " + c.getPlaceholder(counter), c.valueMap(), nil
+	case "any":
+		return c.field + " = ANY(" + c.getPlaceholder(counter) + ")", c.valueMap(), nil
 	case "isnull":
 		return c.field + " IS NULL", nil, nil
 	case "notnull":
@@ -213,6 +215,10 @@ func LTEv(field string, value any) *clause {
 
 func IN(field string, value any) *clause {
 	return clauseInit("in", field, value)
+}
+
+func ANY(field string, value any) *clause {
+	return clauseInit("any", field, value)
 }
 
 func ISNULL(field string) *clause {
