@@ -12,12 +12,19 @@ type InsertBuilder[T any] struct {
 	fields         []string
 	skipPrimaryKey bool
 
+	onConflict      *onConflict
 	returning       []string
 	returningCustom bool
 }
 
 func (b *InsertBuilder[T]) Fields(fields ...string) *InsertBuilder[T] {
 	b.fields = fields
+
+	return b
+}
+
+func (b *InsertBuilder[T]) OnConflict(oc *onConflict) *InsertBuilder[T] {
+	b.onConflict = oc
 
 	return b
 }
@@ -103,6 +110,10 @@ func (b *InsertBuilder[T]) Build() (Query[T], error) {
 	buf.WriteString(") VALUES (")
 	buf.WriteString(strings.Join(valuesFields, ", "))
 	buf.WriteString(")")
+
+	if b.onConflict != nil {
+		buf.WriteString(b.onConflict.build())
+	}
 
 	if b.returning != nil {
 		buf.WriteString(" RETURNING ")
