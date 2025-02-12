@@ -134,7 +134,7 @@ func TestInsertOnConflictDoNothing(t *testing.T) {
 	qb, err := o.
 		Insert().
 		Fields("key").
-		OnConflict().DoNothing().
+		OnConflict(DoNothing()).
 		Returning("id").
 		Build()
 	assert.NoError(t, err)
@@ -173,7 +173,7 @@ func TestInsertOnConflictDoUpdate(t *testing.T) {
 	qb, err := o.
 		Insert().
 		Fields("key").
-		OnConflict("created_at", "updated_at").DoUpdate("set created_at=testTable.created_at").
+		OnConflict(DoUpdate("set created_at=testTable.created_at", "created_at", "updated_at")).
 		Returning("id").
 		Build()
 	assert.NoError(t, err)

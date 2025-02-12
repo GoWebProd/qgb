@@ -12,8 +12,7 @@ type InsertBuilder[T any] struct {
 	fields         []string
 	skipPrimaryKey bool
 
-	onConflict *OnConflict[T]
-
+	onConflict      *onConflict
 	returning       []string
 	returningCustom bool
 }
@@ -24,13 +23,10 @@ func (b *InsertBuilder[T]) Fields(fields ...string) *InsertBuilder[T] {
 	return b
 }
 
-func (b *InsertBuilder[T]) OnConflict(fields ...string) *OnConflict[T] {
-	b.onConflict = &OnConflict[T]{
-		parent: b,
-		fields: fields,
-	}
+func (b *InsertBuilder[T]) OnConflict(oc *onConflict) *InsertBuilder[T] {
+	b.onConflict = oc
 
-	return b.onConflict
+	return b
 }
 
 func (b *InsertBuilder[T]) Returning(fields ...string) *InsertBuilder[T] {
@@ -116,27 +112,7 @@ func (b *InsertBuilder[T]) Build() (Query[T], error) {
 	buf.WriteString(")")
 
 	if b.onConflict != nil {
-		buf.WriteString(" ON CONFLICT ")
-
-		if len(b.onConflict.fields) > 0 {
-			buf.WriteString("(")
-
-			for i := range b.onConflict.fields {
-				buf.WriteString(b.onConflict.fields[i])
-
-				if i < len(b.onConflict.fields)-1 {
-					buf.WriteString(", ")
-				}
-			}
-
-			buf.WriteString(") ")
-		}
-
-		buf.WriteString(string(b.onConflict.action))
-
-		if b.onConflict.set != "" {
-			buf.WriteString(b.onConflict.set)
-		}
+		buf.WriteString(b.onConflict.build())
 	}
 
 	if b.returning != nil {

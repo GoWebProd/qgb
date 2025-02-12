@@ -1,28 +1,51 @@
 package qgb
 
-type conflictAction string
+import "bytes"
 
-const (
-	doNothing conflictAction = "DO NOTHING"
-	doUpdate  conflictAction = "DO UPDATE "
-)
+func DoNothing(fields ...string) *onConflict {
+	return &onConflict{
+		action: "DO NOTHING",
+		fields: fields,
+	}
+}
 
-type OnConflict[T any] struct {
-	fields []string
-	action conflictAction
+func DoUpdate(set string, fields ...string) *onConflict {
+	return &onConflict{
+		action: "DO UPDATE ",
+		set:    set,
+		fields: fields,
+	}
+}
+
+type onConflict struct {
+	action string
 	set    string
-	parent *InsertBuilder[T]
+	fields []string
 }
 
-func (c *OnConflict[T]) DoNothing() *InsertBuilder[T] {
-	c.action = doNothing
+func (c *onConflict) build() string {
+	buf := bytes.NewBuffer(make([]byte, 0, 256))
+	buf.WriteString(" ON CONFLICT ")
 
-	return c.parent
-}
+	if len(c.fields) > 0 {
+		buf.WriteString("(")
 
-func (c *OnConflict[T]) DoUpdate(set string) *InsertBuilder[T] {
-	c.action = doUpdate
-	c.set = set
+		for i := range c.fields {
+			buf.WriteString(c.fields[i])
 
-	return c.parent
+			if i < len(c.fields)-1 {
+				buf.WriteString(", ")
+			}
+		}
+
+		buf.WriteString(") ")
+	}
+
+	buf.WriteString(c.action)
+
+	if c.set != "" {
+		buf.WriteString(c.set)
+	}
+
+	return buf.String()
 }
