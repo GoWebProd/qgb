@@ -117,17 +117,23 @@ func (b *InsertBuilder[T]) Build() (Query[T], error) {
 
 	if b.onConflict != nil {
 		buf.WriteString(" ON CONFLICT ")
+
 		if len(b.onConflict.fields) > 0 {
 			buf.WriteString("(")
+
 			for i := range b.onConflict.fields {
 				buf.WriteString(b.onConflict.fields[i])
+
 				if i < len(b.onConflict.fields)-1 {
 					buf.WriteString(", ")
 				}
 			}
+
 			buf.WriteString(") ")
 		}
+
 		buf.WriteString(string(b.onConflict.action))
+
 		if b.onConflict.set != "" {
 			buf.WriteString(b.onConflict.set)
 		}
