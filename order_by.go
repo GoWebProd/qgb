@@ -2,12 +2,12 @@ package qgb
 
 type orderBy struct {
 	field string
-	sort  sort
+	sort  Order
 }
 
-type sort string
+type Order string
 
 const (
-	Asc  sort = "ASC"
-	Desc sort = "DESC"
+	Asc  Order = "ASC"
+	Desc Order = "DESC"
 )

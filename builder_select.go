@@ -46,7 +46,7 @@ func (b *SelectBuilder[T]) Offset(offset int) *SelectBuilder[T] {
 	return b
 }
 
-func (b *SelectBuilder[T]) OrderBy(field string, sort sort) *SelectBuilder[T] {
+func (b *SelectBuilder[T]) OrderBy(field string, sort Order) *SelectBuilder[T] {
 	b.orderBy = append(b.orderBy, orderBy{
 		field: field,
 		sort:  sort,
