@@ -220,6 +220,16 @@ func TestClauseNOTNULL(t *testing.T) {
 	assert.Equal(t, ([]placeholderValue)(nil), args)
 }
 
+func TestClauseCONTAINS(t *testing.T) {
+	clause := CONTAINS("id", 5)
+
+	sql, args, err := clause.toSQL(&counter{})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "id @> @id1", sql)
+	assert.Equal(t, []placeholderValue{{"id1", 5}}, args)
+}
+
 func TestClauseAND(t *testing.T) {
 	clause := AND(
 		EQ("id"),

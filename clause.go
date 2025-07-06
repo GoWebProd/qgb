@@ -48,6 +48,8 @@ func (c *clause) toSQL(counter *counter) (string, []placeholderValue, error) {
 		return c.field + " IS NULL", nil, nil
 	case "notnull":
 		return c.field + " IS NOT NULL", nil, nil
+	case "contains":
+		return c.field + " @> " + c.getPlaceholder(counter), c.valueMap(), nil
 	case "and":
 		return c.buildAnd(counter)
 	case "or":
@@ -227,6 +229,10 @@ func ISNULL(field string) *clause {
 
 func NOTNULL(field string) *clause {
 	return clauseInit("notnull", field, nil)
+}
+
+func CONTAINS(field string, value any) *clause {
+	return clauseInit("contains", field, value)
 }
 
 func AND(clauses ...*clause) *clause {
