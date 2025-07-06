@@ -12,7 +12,7 @@ type UpdateBuilder[T any] struct {
 	updateField []string
 	updateValue []any
 
-	where     *clause
+	where     *Clause
 	returning []string
 
 	unexpectedFields []string
@@ -41,7 +41,7 @@ func (b *UpdateBuilder[T]) SetValue(field string, value any) *UpdateBuilder[T] {
 	return b
 }
 
-func (b *UpdateBuilder[T]) Where(clause *clause) *UpdateBuilder[T] {
+func (b *UpdateBuilder[T]) Where(clause *Clause) *UpdateBuilder[T] {
 	b.where = clause
 
 	return b

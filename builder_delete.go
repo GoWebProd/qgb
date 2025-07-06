@@ -5,10 +5,10 @@ import "bytes"
 type DeleteBuilder[T any] struct {
 	table *table
 
-	where *clause
+	where *Clause
 }
 
-func (b *DeleteBuilder[T]) Where(clause *clause) *DeleteBuilder[T] {
+func (b *DeleteBuilder[T]) Where(clause *Clause) *DeleteBuilder[T] {
 	b.where = clause
 
 	return b

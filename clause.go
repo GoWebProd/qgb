@@ -13,7 +13,7 @@ func Placeholder(name string) any {
 	return placeholder{name}
 }
 
-type clause struct {
+type Clause struct {
 	op string
 
 	field         string
@@ -21,10 +21,10 @@ type clause struct {
 	value         any
 	needFieldLink bool
 
-	sub []*clause
+	sub []*Clause
 }
 
-func (c *clause) toSQL(counter *counter) (string, []placeholderValue, error) {
+func (c *Clause) toSQL(counter *counter) (string, []placeholderValue, error) {
 	switch c.op {
 	case "raw":
 		return c.field, nil, nil
@@ -61,7 +61,7 @@ func (c *clause) toSQL(counter *counter) (string, []placeholderValue, error) {
 	}
 }
 
-func (c *clause) getPlaceholder(counter *counter) string {
+func (c *Clause) getPlaceholder(counter *counter) string {
 	if c.placeholder == "" {
 		c.placeholder = c.field + counter.IncrementString()
 		c.needFieldLink = true
@@ -75,7 +75,7 @@ type placeholderValue struct {
 	value any
 }
 
-func (c *clause) valueMap() []placeholderValue {
+func (c *Clause) valueMap() []placeholderValue {
 	if c.value != nil {
 		return []placeholderValue{
 			{field: c.placeholder, value: c.value},
@@ -92,7 +92,7 @@ func (c *clause) valueMap() []placeholderValue {
 	}
 }
 
-func (c *clause) mergeSubs(counter *counter) ([]string, []placeholderValue, error) {
+func (c *Clause) mergeSubs(counter *counter) ([]string, []placeholderValue, error) {
 	clauses := make([]string, 0, len(c.sub))
 	args := make([]placeholderValue, 0, len(c.sub))
 
@@ -110,7 +110,7 @@ func (c *clause) mergeSubs(counter *counter) ([]string, []placeholderValue, erro
 	return clauses, args, nil
 }
 
-func (c *clause) buildAnd(counter *counter) (string, []placeholderValue, error) {
+func (c *Clause) buildAnd(counter *counter) (string, []placeholderValue, error) {
 	clauses, args, err := c.mergeSubs(counter)
 	if err != nil {
 		return "", nil, err
@@ -119,7 +119,7 @@ func (c *clause) buildAnd(counter *counter) (string, []placeholderValue, error) 
 	return "(" + strings.Join(clauses, ") AND (") + ")", args, nil
 }
 
-func (c *clause) buildOr(counter *counter) (string, []placeholderValue, error) {
+func (c *Clause) buildOr(counter *counter) (string, []placeholderValue, error) {
 	clauses, args, err := c.mergeSubs(counter)
 	if err != nil {
 		return "", nil, err
@@ -128,7 +128,7 @@ func (c *clause) buildOr(counter *counter) (string, []placeholderValue, error) {
 	return "(" + strings.Join(clauses, ") OR (") + ")", args, nil
 }
 
-func (c *clause) buildNot(counter *counter) (string, []placeholderValue, error) {
+func (c *Clause) buildNot(counter *counter) (string, []placeholderValue, error) {
 	if len(c.sub) != 1 || c.sub[0] == nil {
 		return "", nil, errors.New("not clause must have one sub clause")
 	}
@@ -141,11 +141,11 @@ func (c *clause) buildNot(counter *counter) (string, []placeholderValue, error) 
 	return "NOT (" + sql + ")", args, nil
 }
 
-func clauseInit(op string, field string, value any) *clause {
+func clauseInit(op string, field string, value any) *Clause {
 	return clauseInitWithSub(op, field, value, nil)
 }
 
-func clauseInitWithSub(op string, field string, value any, sub []*clause) *clause {
+func clauseInitWithSub(op string, field string, value any, sub []*Clause) *Clause {
 	var pholder string
 
 	p, ok := value.(placeholder)
@@ -154,7 +154,7 @@ func clauseInitWithSub(op string, field string, value any, sub []*clause) *claus
 		pholder = p.name
 	}
 
-	return &clause{
+	return &Clause{
 		op:          op,
 		field:       field,
 		placeholder: pholder,
@@ -163,86 +163,86 @@ func clauseInitWithSub(op string, field string, value any, sub []*clause) *claus
 	}
 }
 
-func RAW(c string) *clause {
+func RAW(c string) *Clause {
 	return clauseInit("raw", c, nil)
 }
 
-func EQ(field string) *clause {
+func EQ(field string) *Clause {
 	return clauseInit("eq", field, nil)
 }
 
-func EQv(field string, value any) *clause {
+func EQv(field string, value any) *Clause {
 	return clauseInit("eq", field, value)
 }
 
-func NEQ(field string) *clause {
+func NEQ(field string) *Clause {
 	return clauseInit("neq", field, nil)
 }
 
-func NEQv(field string, value any) *clause {
+func NEQv(field string, value any) *Clause {
 	return clauseInit("neq", field, value)
 }
 
-func LT(field string) *clause {
+func LT(field string) *Clause {
 	return clauseInit("lt", field, nil)
 }
 
-func LTv(field string, value any) *clause {
+func LTv(field string, value any) *Clause {
 	return clauseInit("lt", field, value)
 }
 
-func GT(field string) *clause {
+func GT(field string) *Clause {
 	return clauseInit("gt", field, nil)
 }
 
-func GTv(field string, value any) *clause {
+func GTv(field string, value any) *Clause {
 	return clauseInit("gt", field, value)
 }
 
-func GTE(field string) *clause {
+func GTE(field string) *Clause {
 	return clauseInit("gte", field, nil)
 }
 
-func GTEv(field string, value any) *clause {
+func GTEv(field string, value any) *Clause {
 	return clauseInit("gte", field, value)
 }
 
-func LTE(field string) *clause {
+func LTE(field string) *Clause {
 	return clauseInit("lte", field, nil)
 }
 
-func LTEv(field string, value any) *clause {
+func LTEv(field string, value any) *Clause {
 	return clauseInit("lte", field, value)
 }
 
-func IN(field string, value any) *clause {
+func IN(field string, value any) *Clause {
 	return clauseInit("in", field, value)
 }
 
-func ANY(field string, value any) *clause {
+func ANY(field string, value any) *Clause {
 	return clauseInit("any", field, value)
 }
 
-func ISNULL(field string) *clause {
+func ISNULL(field string) *Clause {
 	return clauseInit("isnull", field, nil)
 }
 
-func NOTNULL(field string) *clause {
+func NOTNULL(field string) *Clause {
 	return clauseInit("notnull", field, nil)
 }
 
-func CONTAINS(field string, value any) *clause {
+func CONTAINS(field string, value any) *Clause {
 	return clauseInit("contains", field, value)
 }
 
-func AND(clauses ...*clause) *clause {
+func AND(clauses ...*Clause) *Clause {
 	return clauseInitWithSub("and", "", nil, clauses)
 }
 
-func OR(clauses ...*clause) *clause {
+func OR(clauses ...*Clause) *Clause {
 	return clauseInitWithSub("or", "", nil, clauses)
 }
 
-func NOT(c *clause) *clause {
-	return clauseInitWithSub("not", "", nil, []*clause{c})
+func NOT(c *Clause) *Clause {
+	return clauseInitWithSub("not", "", nil, []*Clause{c})
 }

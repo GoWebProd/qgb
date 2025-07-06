@@ -12,7 +12,7 @@ type SelectBuilder[T any] struct {
 	fields       []string
 	fieldsCustom bool
 
-	where   *clause
+	where   *Clause
 	orderBy []orderBy
 	limit   *int
 	offset  *int
@@ -28,7 +28,7 @@ func (b *SelectBuilder[T]) Fields(fields ...string) *SelectBuilder[T] {
 	return b
 }
 
-func (b *SelectBuilder[T]) Where(clause *clause) *SelectBuilder[T] {
+func (b *SelectBuilder[T]) Where(clause *Clause) *SelectBuilder[T] {
 	b.where = clause
 
 	return b
